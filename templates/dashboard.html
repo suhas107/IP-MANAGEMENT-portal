@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ICAR-IIRR | Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <style>
+        /* --- DYNAMIC THEME VARIABLES --- */
+        :root {
+            --primary: #10b981; 
+            --warning: #f59e0b; 
+            --danger: #ef4444; 
+            --blue: #3b82f6;
+            --sidebar-bg: linear-gradient(180deg, #064e3b 0%, #022c22 100%);
+            
+            /* LIGHT MODE (Default) */
+            --bg: #f0fdf4; 
+            --surface: rgba(255, 255, 255, 0.7);
+            --surface-hover: rgba(255, 255, 255, 1);
+            --text-main: #022c22;
+            --text-muted: #0f766e;
+            --border: rgba(16, 185, 129, 0.3);
+            --card-shadow: 0 8px 32px rgba(4, 120, 87, 0.05);
+            --chart-grid: rgba(0,0,0,0.05);
+        }
+
+        /* DARK MODE OVERRIDES */
+        body.dark-mode {
+            --bg: #020617; 
+            --surface: rgba(15, 23, 42, 0.7);
+            --surface-hover: rgba(30, 41, 59, 1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --sidebar-bg: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+            --chart-grid: rgba(255,255,255,0.05);
+        }
+
+        html, body { height: 100%; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            color: var(--text-main); 
+            display: flex;
+            background-color: var(--bg);
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        .bg-mesh {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(160, 100%, 76%, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(43, 100%, 74%, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(160, 100%, 76%, 0.05) 0px, transparent 50%);
+            pointer-events: none;
+        }
+
+        .stat-card, .app-btn, .sidebar, .top-header { user-select: none; }
+
+        /* --- THE ENTERPRISE SIDEBAR --- */
+        .sidebar {
+            width: 260px; 
+            background: var(--sidebar-bg);
+            min-height: 100vh; color: white; position: fixed;
+            box-shadow: 4px 0 25px rgba(0,0,0,0.2); z-index: 100;
+            overflow-y: auto; overflow-x: hidden;
+            transition: background 0.4s ease;
+            display: flex; flex-direction: column;
+        }
+
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+        .sidebar::after {
+            content: '\f4d8'; font-family: "Font Awesome 6 Free"; font-weight: 900;
+            position: fixed; bottom: -50px; left: -40px;
+            font-size: 250px; color: rgba(255,255,255,0.02); z-index: 0; transform: rotate(-15deg); pointer-events: none;
+        }
+
+        .sidebar-brand {
+            padding: 30px 20px; font-size: 22px; font-weight: 700; text-align: center;
+            letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 10px;
+            position: relative; z-index: 1; border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            padding: 20px 25px 10px; font-size: 11px; color: #94a3b8; 
+            font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; position: relative; z-index: 1;
+        }
+
+        .nav-item {
+            margin: 8px 15px; padding: 14px 20px; display: flex; align-items: center; color: #cbd5e1; 
+            text-decoration: none; font-weight: 500; transition: all 0.3s; 
+            border-radius: 12px; font-size: 14px; position: relative; z-index: 1;
+        }
+        .nav-item:hover, .nav-item.active { color: white; background: rgba(255,255,255,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .nav-item i { width: 30px; font-size: 16px; }
+
+        /* Push the logout button to the bottom */
+        .logout-btn { margin-top: auto; margin-bottom: 20px; color: #fca5a5; }
+
+        /* --- MAIN CONTENT AREA --- */
+        .main-content {
+            margin-left: 260px; padding: 30px 40px; width: calc(100% - 260px);
+            min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column;
+        }
+
+        .cascade-1 { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .cascade-2 { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.1s; opacity: 0; }
+        .cascade-3 { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.2s; opacity: 0; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- HEADER & DARK MODE TOGGLE --- */
+        .top-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 20px 30px; border-radius: 20px; margin-bottom: 30px;
+            box-shadow: var(--card-shadow); border: 1px solid var(--border);
+            transition: all 0.4s ease;
+        }
+
+        .header-title h2 { margin: 0; font-weight: 700; color: var(--text-main); font-size: 24px; letter-spacing: -0.5px; transition: color 0.4s ease;}
+        .header-title p { margin: 0; color: var(--text-muted); font-size: 13px; font-weight: 600; display: flex; align-items: center; transition: color 0.4s ease;}
+
+        .live-indicator {
+            display: inline-block; width: 8px; height: 8px; background: var(--primary);
+            border-radius: 50%; margin-right: 8px;
+            box-shadow: 0 0 0 rgba(16, 185, 129, 0.4); animation: pulse-emerald 2s infinite;
+        }
+        @keyframes pulse-emerald { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        .top-actions { display: flex; align-items: center; gap: 20px; }
+        .user-profile { display: flex; align-items: center; gap: 15px; font-weight: 600; cursor: pointer; border-left: 1px solid var(--border); padding-left: 20px;}
+        
+        /* THEME SWITCHER */
+        .theme-switch { position: relative; display: inline-block; width: 60px; height: 30px; }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.1); transition: .4s; border-radius: 30px;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 8px;
+            border: 1px solid var(--border);
+        }
+        .dark-mode .slider { background-color: rgba(255,255,255,0.1); }
+        .slider i { font-size: 12px; color: var(--text-muted); z-index: 1;}
+        .slider:before {
+            position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%; z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider:before { transform: translateX(28px); background-color: #1e293b;}
+
+        /* --- STAT CARDS --- */
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 30px; }
+
+        .stat-card {
+            background: var(--surface); backdrop-filter: blur(20px);
+            padding: 25px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: var(--card-shadow); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 1px solid var(--border); cursor: default;
+        }
+
+        .stat-card:hover { transform: translateY(-5px); background: var(--surface-hover); }
+        
+        .stat-details h3 { margin: 0; font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+        .stat-details h1 { margin: 5px 0 0 0; font-size: 32px; color: var(--text-main); font-weight: 700; line-height: 1.2; }
+        
+        .icon-box { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .icon-wheat { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .icon-emerald { background: rgba(16, 185, 129, 0.1); color: var(--primary); }
+        .icon-blue { background: rgba(59, 130, 246, 0.1); color: var(--blue); }
+        .icon-coral { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+
+        /* --- PANELS --- */
+        .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; flex-grow: 1; }
+        .panel { 
+            background: var(--surface); backdrop-filter: blur(20px); 
+            padding: 30px; border-radius: 24px; box-shadow: var(--card-shadow); 
+            display: flex; flex-direction: column; border: 1px solid var(--border);
+            transition: all 0.4s ease;
+        }
+        .panel h3 { margin: 0 0 20px 0; color: var(--text-main); font-weight: 700; font-size: 18px; transition: color 0.4s ease;}
+
+        /* UPGRADED FLEXBOX ACTION GRID */
+        .action-grid { display: flex; flex-direction: column; gap: 20px; flex-grow: 1; }
+
+        /* PROPER BUTTON GLOW AND SPACING */
+        .app-btn {
+            background: var(--surface); border-radius: 20px; padding: 20px; 
+            text-decoration: none; color: var(--text-main); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+            border: 2px solid transparent; /* Prevents jumping on hover */
+            cursor: pointer; flex: 1; /* Makes them fill equal space */
+            gap: 15px; box-shadow: var(--card-shadow);
+        }
+        
+        .app-btn i { font-size: 48px; margin-bottom: 5px; transition: transform 0.3s ease; }
+        
+        .app-btn:hover { 
+            background: var(--surface-hover); 
+            transform: translateY(-5px); 
+            border: 2px solid var(--primary); /* Smooth border */
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.25); /* True Emerald Glow */
+        }
+        .app-btn:hover i { transform: scale(1.1); }
+        
+        .btn-repo i { color: var(--text-muted); }
+        .btn-cal i { color: var(--primary); }
+
+        .alert-box { background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); color: #991b1b; padding: 20px; border-radius: 16px; margin-bottom: 30px; border-left: 5px solid var(--danger); animation: alertPulse 2s infinite; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1); }
+        .dark-mode .alert-box { background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); color: #fecaca; }
+        @keyframes alertPulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-wheat-awn" style="color: #10b981; font-size: 28px;"></i> ICAR-IIRR
+        </div>
+        
+        <div class="section-title">Menu</div>
+        <a href="/dashboard" class="nav-item active"><i class="fa-solid fa-border-all"></i> Command Center</a>
+        <a href="/repository" class="nav-item"><i class="fa-solid fa-database"></i> Central Repository</a>
+        <a href="/deadlines" class="nav-item"><i class="fa-solid fa-calendar-days"></i> Docketing Calendar</a>
+        
+        {% if role == 'Admin' %}
+        <div class="section-title" style="margin-top: 15px;">Admin Controls</div>
+        <a href="/add_variety" class="nav-item"><i class="fa-solid fa-seedling"></i> Add Variety</a>
+        <a href="/add_patent" class="nav-item"><i class="fa-solid fa-microscope"></i> Add Patent</a>
+        <a href="/add_ip" class="nav-item"><i class="fa-solid fa-copyright"></i> Add Brand Asset</a>
+        <a href="/record_license" class="nav-item"><i class="fa-solid fa-handshake"></i> Record License</a>
+        <a href="/manage_users" class="nav-item"><i class="fa-solid fa-users-gear"></i> Manage Users</a>
+        {% endif %}
+
+        <a href="/logout" class="nav-item logout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Secure Logout</a>
+    </div>
+
+    <div class="main-content">
+        
+        <div class="top-header cascade-1">
+            <div class="header-title">
+                <h2 id="dynamic-greeting">Welcome back, {{ username }}</h2>
+                <p><span class="live-indicator"></span> IIRR Agritech System Online</p>
+            </div>
+
+            <div class="top-actions">
+                <label class="theme-switch" for="theme-toggle">
+                    <input type="checkbox" id="theme-toggle">
+                    <div class="slider">
+                        <i class="fa-solid fa-sun"></i>
+                        <i class="fa-solid fa-moon"></i>
+                    </div>
+                </label>
+
+                <div class="user-profile">
+                    <div style="text-align: right; line-height: 1.2;">
+                        <span style="display: block; font-size: 14px; color: var(--text-main);">{{ username }}</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">{{ role }}</span>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name={{ username }}&background=10b981&color=fff&rounded=true&bold=true" alt="User" width="44" style="border-radius: 50%; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
+                </div>
+            </div>
+        </div>
+
+        {% if expiring_soon %}
+        <div class="alert-box cascade-2">
+            <h4 style="margin:0 0 5px 0;"><i class="fa-solid fa-triangle-exclamation"></i> Action Required</h4>
+            <p style="margin: 0; font-size: 14px; font-weight: 500;">You have {{ expiring_soon|length }} asset(s) with upcoming deadlines.</p>
+        </div>
+        {% endif %}
+
+        <div class="grid-stats cascade-2">
+            <div class="stat-card hover-wheat">
+                <div class="stat-details">
+                    <h3>Total Revenue</h3>
+                    <h1>₹{{ "{:,.2f}".format(revenue) }}</h1>
+                </div>
+                <div class="icon-box icon-wheat"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            </div>
+            <div class="stat-card hover-emerald">
+                <div class="stat-details">
+                    <h3>Varieties & Hybrids</h3>
+                    <h1>{{ total_varieties }}</h1>
+                </div>
+                <div class="icon-box icon-emerald"><i class="fa-solid fa-seedling"></i></div>
+            </div>
+            <div class="stat-card hover-teal">
+                <div class="stat-details">
+                    <h3>Patents & Designs</h3>
+                    <h1>{{ total_patents + total_designs }}</h1>
+                </div>
+                <div class="icon-box icon-blue"><i class="fa-solid fa-microscope"></i></div>
+            </div>
+            <div class="stat-card hover-coral">
+                <div class="stat-details">
+                    <h3>Brand Assets</h3>
+                    <h1>{{ total_brands }}</h1>
+                </div>
+                <div class="icon-box icon-coral"><i class="fa-solid fa-copyright"></i></div>
+            </div>
+        </div>
+
+        <div class="content-grid cascade-3">
+            <div class="panel" style="min-height: 400px;">
+                <h3>Portfolio Distribution</h3>
+                <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%;">
+                    <div id="apexChartContainer" style="width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Quick Actions</h3>
+                <div class="action-grid">
+                    <a href="/repository" class="app-btn btn-repo">
+                        <i class="fa-solid fa-tractor"></i>
+                        <div>
+                            <span style="display: block; font-size: 20px; font-weight: 700;">Central Repository</span>
+                            <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">View all registered crop assets</span>
+                        </div>
+                    </a>
+                    <a href="/deadlines" class="app-btn btn-cal">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <div>
+                            <span style="display: block; font-size: 20px; font-weight: 700;">Docketing Calendar</span>
+                            <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Track IP & patent deadlines</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- TIME GREETING ---
+        const hour = new Date().getHours();
+        let greeting = "Good evening";
+        if (hour < 12) greeting = "Good morning";
+        else if (hour < 18) greeting = "Good afternoon";
+        document.getElementById('dynamic-greeting').innerText = `${greeting}, {{ username }} 👋`;
+
+        // --- DARK MODE LOGIC ---
+        const toggleSwitch = document.getElementById('theme-toggle');
+        const currentTheme = localStorage.getItem('theme');
+
+        if (currentTheme) {
+            document.body.classList.add(currentTheme);
+            if (currentTheme === 'dark-mode') toggleSwitch.checked = true;
+        }
+
+        function switchTheme(e) {
+            if (e.target.checked) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light-mode');
+            }
+            updateChartTheme();
+        }
+        toggleSwitch.addEventListener('change', switchTheme);
+
+
+        // --- APEXCHARTS CONFIG ---
+        let filed = {{ status_counts['Filed'] }}; 
+        let granted = {{ status_counts['Granted'] }}; 
+        let licensed = {{ status_counts['Licensed'] }};
+        let realTotalAssets = {{ total_varieties + total_patents + total_designs + total_brands }};
+        
+        let cData = []; let cLabels = []; let cColors = [];
+
+        if (realTotalAssets === 0) {
+            cData = [0]; cLabels = ['No Data Yet']; cColors = ['#cbd5e1'];
+        } else if (filed === 0 && granted === 0 && licensed === 0) {
+            cData = [realTotalAssets]; cLabels = ['Active Assets']; cColors = ['#94a3b8'];
+        } else {
+            cData = [filed, granted, licensed];
+            cLabels = ['Pending / Filed', 'Granted / Active', 'Licensed / Monetized'];
+            cColors = ['#f59e0b', '#10b981', '#3b82f6']; 
+        }
+
+        var options = {
+            series: [{ name: 'Total Assets', data: cData }],
+            chart: { type: 'bar', height: 350, toolbar: { show: false }, animations: { enabled: true, easing: 'easeinout', speed: 800 } },
+            plotOptions: { bar: { borderRadius: 10, columnWidth: '45%', distributed: true, dataLabels: { position: 'top' } } },
+            dataLabels: {
+                enabled: true, formatter: function (val) { return val; }, offsetY: -25,
+                style: { fontSize: '18px', fontFamily: 'Poppins', fontWeight: 700, colors: [toggleSwitch.checked ? '#f8fafc' : '#022c22'] }
+            },
+            colors: cColors,
+            xaxis: {
+                categories: cLabels,
+                labels: { style: { fontSize: '14px', fontFamily: 'Poppins', fontWeight: 600, colors: ['#94a3b8', '#94a3b8', '#94a3b8'] } },
+                axisBorder: { show: false }, axisTicks: { show: false }
+            },
+            yaxis: { labels: { style: { fontFamily: 'Poppins', color: '#94a3b8', fontWeight: 500 } } },
+            grid: { borderColor: 'var(--chart-grid)', strokeDashArray: 4, yaxis: { lines: { show: true } } },
+            fill: { type: 'gradient', gradient: { shade: 'light', type: 'vertical', shadeIntensity: 0.25, inverseColors: true, opacityFrom: 1, opacityTo: 0.8, stops: [50, 0, 100] } },
+            legend: { show: false }, tooltip: { theme: toggleSwitch.checked ? 'dark' : 'light', style: { fontSize: '14px', fontFamily: 'Poppins' } }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#apexChartContainer"), options);
+        chart.render();
+
+        function updateChartTheme() {
+            const isDark = document.body.classList.contains('dark-mode');
+            chart.updateOptions({
+                dataLabels: { style: { colors: [isDark ? '#f8fafc' : '#022c22'] } },
+                tooltip: { theme: isDark ? 'dark' : 'light' }
+            });
+        }
+    </script>
+    {% include 'ai_widget.html' %}
+</body>
+</html>

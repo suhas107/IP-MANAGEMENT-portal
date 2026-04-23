@@ -1,0 +1,22 @@
+# Secrets
+.env
+
+# Temp scripts
+verify_ai.py
+
+# Virtual Environment
+venv/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Database (Keep your actual data private!)
+instance/
+*.db
+*.sqlite3
+
+# Uploaded Files (Don't upload test PDFs to GitHub)
+static/uploads/*
+!static/uploads/.keep

@@ -1,0 +1,166 @@
+<div id="ai-chat-widget">
+    <button id="ai-chat-btn" onclick="toggleChat()">
+        <i class="fa-solid fa-robot"></i>
+    </button>
+
+    <div id="ai-chat-window" style="display: none;">
+        <div class="chat-header">
+            <span><i class="fa-solid fa-robot"></i> IP Data Oracle</span>
+            <button onclick="toggleChat()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="message ai-message">Hello! I am the ICAR-IIRR AI Assistant. Ask me anything about our varieties, patents, or brands.</div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="chat-input" placeholder="Ask about IP records..." onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+
+<style>
+    #ai-chat-widget {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        font-family: inherit;
+    }
+    #ai-chat-btn {
+        background: var(--primary, #10b981);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        transition: transform 0.2s;
+    }
+    #ai-chat-btn:hover { transform: scale(1.1); }
+    #ai-chat-window {
+        position: absolute;
+        bottom: 80px;
+        right: 0;
+        width: 350px;
+        height: 450px;
+        background: var(--bg-card, #ffffff);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--border, #e5e7eb);
+    }
+    .chat-header {
+        background: var(--primary, #10b981);
+        color: white;
+        padding: 15px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .chat-header button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+    }
+    .chat-body {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--bg-main, #f9fafb);
+    }
+    .message {
+        max-width: 85%;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+    .ai-message {
+        background: var(--bg-card, #ffffff);
+        color: var(--text-main, #1f2937);
+        align-self: flex-start;
+        border: 1px solid var(--border, #e5e7eb);
+        border-bottom-left-radius: 0;
+    }
+    .user-message {
+        background: var(--primary, #10b981);
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 0;
+    }
+    .chat-footer {
+        padding: 15px;
+        background: var(--bg-card, #ffffff);
+        border-top: 1px solid var(--border, #e5e7eb);
+        display: flex;
+        gap: 10px;
+    }
+    .chat-footer input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 6px;
+        outline: none;
+        background: var(--bg-main, #ffffff);
+        color: var(--text-main, #1f2937);
+    }
+    .chat-footer button {
+        background: var(--primary, #10b981);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 0 15px;
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    function toggleChat() {
+        const win = document.getElementById('ai-chat-window');
+        win.style.display = win.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function handleEnter(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (!message) return;
+
+        const chatBody = document.getElementById('chat-body');
+        chatBody.innerHTML += `<div class="message user-message">${message}</div>`;
+        input.value = '';
+        
+        const loadingId = 'loading-' + Date.now();
+        chatBody.innerHTML += `<div id="${loadingId}" class="message ai-message"><i class="fa-solid fa-circle-notch fa-spin"></i> Searching database...</div>`;
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+            const data = await response.json();
+            document.getElementById(loadingId).remove();
+            
+            chatBody.innerHTML += `<div class="message ai-message">${data.response || data.error}</div>`;
+        } catch (err) {
+            document.getElementById(loadingId).remove();
+            chatBody.innerHTML += `<div class="message ai-message" style="color: red;">Error connecting to the AI Oracle.</div>`;
+        }
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+</script>

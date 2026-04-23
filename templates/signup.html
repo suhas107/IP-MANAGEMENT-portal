@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ICAR-IIRR | Request Access</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #10b981; --dark: #022c22; --bg: #f0fdf4; --border: rgba(16, 185, 129, 0.3); }
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg); display: flex; align-items: center; justify-content: center; }
+        .bg-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-image: radial-gradient(at 0% 0%, hsla(160, 100%, 76%, 0.15) 0px, transparent 50%), radial-gradient(at 100% 0%, hsla(43, 100%, 74%, 0.15) 0px, transparent 50%); }
+        .login-container { display: flex; width: 950px; height: 600px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); border-radius: 30px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.8); animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .login-brand { flex: 1; background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 40px; text-align: center; position: relative; }
+        .login-brand::after { content: '\f4d8'; font-family: "Font Awesome 6 Free"; font-weight: 900; position: absolute; bottom: -30px; left: -20px; font-size: 200px; color: rgba(255,255,255,0.03); }
+        .login-brand i.main-logo { font-size: 60px; margin-bottom: 20px; color: var(--primary); }
+        .login-brand h1 { font-size: 28px; margin: 0; letter-spacing: 1px; }
+        .login-form-area { flex: 1.4; padding: 50px; display: flex; flex-direction: column; justify-content: center; }
+        .login-form-area h2 { font-size: 24px; color: var(--dark); margin-bottom: 5px; font-weight: 700; }
+        .form-group { position: relative; margin-bottom: 20px; }
+        .form-group i { position: absolute; left: 15px; top: 15px; color: var(--primary); font-size: 16px; }
+        input { width: 100%; padding: 14px 15px 14px 45px; border-radius: 12px; border: 1px solid var(--border); background: white; font-family: 'Poppins'; font-size: 14px; transition: 0.3s; box-sizing: border-box; }
+        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+        .login-btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2); }
+        .login-btn:hover { background: #059669; transform: translateY(-2px); }
+        .form-footer { margin-top: 25px; text-align: center; font-size: 13px; color: #64748b; }
+        .form-footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        .alert-box { background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; border-left: 4px solid #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="login-container">
+        <div class="login-brand">
+            <i class="fa-solid fa-wheat-awn main-logo"></i>
+            <h1>Join IIRR</h1>
+            <p>Registration requires Admin approval before access is granted.</p>
+        </div>
+        <div class="login-form-area">
+            <h2>Request Access</h2>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 30px;">Enter your details for personnel verification.</p>
+            
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert-box">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="form-group">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" name="username" placeholder="Full Name" required>
+                </div>
+                <div class="form-group">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" name="email" placeholder="Official Email" required>
+                </div>
+                <div class="form-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" name="password" placeholder="Create Password" required>
+                </div>
+                <button type="submit" class="login-btn">Submit Access Request</button>
+            </form>
+            <div class="form-footer">Already authorized? <a href="/login">Login here</a></div>
+        </div>
+    </div>
+</body>
+</html>
