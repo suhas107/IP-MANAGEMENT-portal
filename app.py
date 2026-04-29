@@ -56,6 +56,10 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+# Register fromjson Jinja2 filter so templates can parse JSON strings
+import json as _json
+app.jinja_env.filters['fromjson'] = lambda s: _json.loads(s) if s else []
+
 # --- SERVER-SIDE OTP STORE (fixes cookie leak vulnerability) ---
 _otp_store = {}
 
@@ -645,12 +649,12 @@ def export_csv_detailed(repo_type):
     elif repo_type == 'patents':
         filename = "Detailed_Patents_Report.csv"
         cw.writerow(['ID', 'Type', 'Title', 'Status', 'Filed', 'Expiry', 'Company', 'License / MoU Date', 'Office Action', 'Hearing', 'Fee', 'Fee Date', 'Royalty', 'Royalty Date'])
-        models = [PatentProduct, PatentProcess, PatentDesign]
-        for m in models:
+        models = [(PatentProduct, 'Product Patent'), (PatentProcess, 'Process Patent'), (PatentDesign, 'Design Patent')]
+        for m, label in models:
             for p in m.query.all():
                 name = getattr(p, 'patent_name', getattr(p, 'process_name', getattr(p, 'design_name', '')))
                 actual_date = p.date_licensed if p.date_licensed else p.mou_date
-                cw.writerow([p.ip_asset_id, m.__name__, name, p.status, p.date_filed, p.valid_up_to, p.company_licensed, actual_date, p.office_action_date, p.hearing_date, p.license_fee, p.license_fee_date, p.royalty_received, p.date_royalty_received])
+                cw.writerow([p.ip_asset_id, label, name, p.status, p.date_filed, p.valid_up_to, p.company_licensed, actual_date, p.office_action_date, p.hearing_date, p.license_fee, p.license_fee_date, p.royalty_received, p.date_royalty_received])
             
     elif repo_type == 'brands':
         filename = "Detailed_Brands_Report.csv"
@@ -676,7 +680,10 @@ def export_csv_detailed(repo_type):
         for c in Copyright.query.filter_by(status='Licensed').all(): cw.writerow([c.ip_asset_id, 'Copyright', c.company_licensed, c.date_licensed, c.license_fee, '-', c.royalty_received, c.date_royalty_received])
         for t in Trademark.query.filter_by(status='Licensed').all(): cw.writerow([t.ip_asset_id, t.asset_type, t.company_licensed, t.date_licensed, t.license_fee, '-', t.royalty_received, t.date_royalty_received])
 
-    output = Response(si.getvalue(), mimetype='text/csv')
+    output = Response(
+        si.getvalue().encode('utf-8-sig'),  # BOM prefix so Excel opens correctly on Windows
+        mimetype='text/csv; charset=utf-8'
+    )
     output.headers["Content-Disposition"] = f"attachment; filename={filename}"
     return output
 
@@ -779,23 +786,25 @@ def manage_users():
 @app.route('/approve_user/<int:user_id>')
 @login_required
 def approve_user(user_id):
-    if current_user.role == 'Admin':
-        user = User.query.get(user_id)
-        if user:
-            # FIX: If you or admin sign up, you get Admin role automatically on approval
-            if user.username.lower() in ['suhas', 'admin']:
-                user.role = 'Admin'
-            user.is_approved = True
-            db.session.commit()
-            
-            try:
-                msg = Message("ICAR-IIRR Account Approved", sender="suhasnethi04@gmail.com", recipients=[user.email])
-                msg.body = f"Hello {user.username},\n\nYour account has been approved by the Admin.\n\nLink: http://127.0.0.1:5000/login"
-                mail.send(msg)
-                flash(f'User {user.username} approved!')
-            except Exception as e:
-                print(e)
-                flash(f'User approved (Email failed).')
+    # Security: only admins can approve users
+    if current_user.role != 'Admin':
+        return redirect(url_for('dashboard'))
+    user = User.query.get(user_id)
+    if user:
+        # FIX: If you or admin sign up, you get Admin role automatically on approval
+        if user.username.lower() in ['suhas', 'admin']:
+            user.role = 'Admin'
+        user.is_approved = True
+        db.session.commit()
+        
+        try:
+            msg = Message("ICAR-IIRR Account Approved", sender="suhasnethi04@gmail.com", recipients=[user.email])
+            msg.body = f"Hello {user.username},\n\nYour account has been approved by the Admin.\n\nLink: http://127.0.0.1:5000/login"
+            mail.send(msg)
+            flash(f'User {user.username} approved!')
+        except Exception as e:
+            print(e)
+            flash(f'User approved (Email failed).')
 
     return redirect(url_for('manage_users'))
 

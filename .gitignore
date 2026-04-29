@@ -3,6 +3,8 @@
 
 # Temp scripts
 verify_ai.py
+insert_mock_data.py
+run_audit.py
 
 # Virtual Environment
 venv/

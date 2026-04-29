@@ -218,6 +218,48 @@
         .action-icons a.pdf-btn { color: var(--danger); }
         .action-icons a.pdf-btn:hover { color: #b91c1c; }
 
+        /* ── TOOLTIP SYSTEM ── */
+        .tip-wrap { position: relative; display: inline-block; cursor: default; }
+        .tip-wrap .tip-box {
+            visibility: hidden; opacity: 0;
+            background: var(--surface-hover); color: var(--text-main);
+            border: 1px solid var(--border); border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+            padding: 12px 16px; font-size: 13px; font-weight: 500;
+            white-space: normal; min-width: 220px; max-width: 320px;
+            position: absolute; z-index: 999; bottom: calc(100% + 8px); left: 50%;
+            transform: translateX(-50%);
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            line-height: 1.6;
+        }
+        .tip-wrap .tip-box::after {
+            content: ''; position: absolute; top: 100%; left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: var(--border);
+        }
+        .tip-wrap:hover .tip-box { visibility: visible; opacity: 1; }
+
+        /* ── RESISTANCE LEVEL MINI-BADGES ── */
+        .rbadge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 700; margin: 2px 2px; white-space: nowrap; }
+        .rbadge-hr  { background: rgba(239,68,68,0.12);  color: #dc2626; border: 1px solid rgba(239,68,68,0.3); }
+        .rbadge-r   { background: rgba(245,158,11,0.12); color: #b45309; border: 1px solid rgba(245,158,11,0.3); }
+        .rbadge-mr  { background: rgba(59,130,246,0.12); color: #1d4ed8; border: 1px solid rgba(59,130,246,0.3); }
+        .rbadge-t   { background: rgba(16,185,129,0.12); color: #065f46; border: 1px solid rgba(16,185,129,0.3); }
+        .rbadge-ht  { background: rgba(139,92,246,0.12); color: #6d28d9; border: 1px solid rgba(139,92,246,0.3); }
+        .rbadge-mt  { background: rgba(20,184,166,0.12); color: #0f766e; border: 1px solid rgba(20,184,166,0.3); }
+
+        .tag-pill { display: inline-block; background: rgba(16,185,129,0.1); color: var(--primary);
+            border: 1px solid rgba(16,185,129,0.25); border-radius: 20px;
+            padding: 2px 10px; font-size: 11px; font-weight: 600; margin: 2px; }
+
+        .more-chip { display: inline-block; background: var(--border); color: var(--text-muted);
+            border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; cursor: pointer; }
+
+        .resist-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: var(--text-muted); margin: 6px 0 3px 0; }
+
     </style>
 </head>
 <body>
@@ -329,7 +371,8 @@
                                 <th>Zones</th>
                                 <th>States</th>
                                 <th>Grain Type</th>
-                                <th>Resistances (Pest/Disease)</th>
+                                <th>Pest Resistances</th>
+                                <th>Disease Resistances</th>
                                 <th>Abiotic Stress</th>
                                 <th>Special Traits</th>
                                 </tr>
@@ -354,15 +397,103 @@
                                 <td>{{ item.ppvfr_registration or '-' }}</td>
                                 <td>{{ item.agency_released_by or '-' }}</td>
                                 <td>{{ item.yield_data or '-' }}</td>
-                                <td><span style="font-size: 12px; color: var(--text-muted);">{{ item.clean_zones[:30] }}...</span></td>
-                                <td><span style="font-size: 12px; color: var(--text-muted);">{{ item.clean_states[:30] }}...</span></td>
-                                <td>{{ item.clean_grains }}</td>
-                                <td><span style="font-size: 12px; color: var(--text-muted);">P: {{ item.clean_pests[:15] }}... | D: {{ item.clean_diseases[:15] }}...</span></td>
-                                <td><span style="font-size: 12px; color: var(--text-muted);">{{ item.clean_abiotic[:30] }}...</span></td>
-                                <td><span style="font-size: 12px; color: var(--text-muted);">{{ item.special_traits[:30] if item.special_traits else '-' }}</span></td>
+                                {# ── ZONES ── #}
+                                <td>
+                                    {% set zones = item.recommended_zones | fromjson if item.recommended_zones else [] %}
+                                    {% if zones %}
+                                        {% for z in zones[:2] %}<span class="tag-pill">{{ z }}</span>{% endfor %}
+                                        {% if zones|length > 2 %}
+                                        <span class="tip-wrap"><span class="more-chip">+{{ zones|length - 2 }} more</span>
+                                            <div class="tip-box">{% for z in zones %}<span class="tag-pill">{{ z }}</span>{% endfor %}</div>
+                                        </span>{% endif %}
+                                    {% else %}-{% endif %}
+                                </td>
+                                {# ── STATES ── #}
+                                <td>
+                                    {% set sts = item.states | fromjson if item.states else [] %}
+                                    {% if sts %}
+                                        {% for s in sts[:2] %}<span class="tag-pill">{{ s }}</span>{% endfor %}
+                                        {% if sts|length > 2 %}
+                                        <span class="tip-wrap"><span class="more-chip">+{{ sts|length - 2 }} more</span>
+                                            <div class="tip-box">{% for s in sts %}<span class="tag-pill">{{ s }}</span>{% endfor %}</div>
+                                        </span>{% endif %}
+                                    {% else %}-{% endif %}
+                                </td>
+                                {# ── GRAIN TYPES ── #}
+                                <td>
+                                    {% set grains = item.grain_types | fromjson if item.grain_types else [] %}
+                                    {% for g in grains %}<span class="tag-pill" style="background:rgba(245,158,11,0.1);color:#b45309;border-color:rgba(245,158,11,0.3);">{{ g }}</span>{% endfor %}
+                                    {% if not grains %}-{% endif %}
+                                </td>
+                                {# ── PEST RESISTANCES ── #}
+                                <td style="min-width:160px;">
+                                    {% set pests = item.pest_resistances | fromjson if item.pest_resistances else [] %}
+                                    {% if pests %}
+                                        {% for p in pests[:2] %}
+                                            <span class="tip-wrap">
+                                                {% if p.level == 'Highly Resistant' %}<span class="rbadge rbadge-hr">{{ p.name }}</span>
+                                                {% elif p.level == 'Resistant' %}<span class="rbadge rbadge-r">{{ p.name }}</span>
+                                                {% elif p.level == 'Moderately Resistant' %}<span class="rbadge rbadge-mr">{{ p.name }}</span>
+                                                {% else %}<span class="rbadge rbadge-t">{{ p.name }}</span>{% endif %}
+                                                <div class="tip-box"><strong>{{ p.name }}</strong><br>Level: {{ p.level }}</div>
+                                            </span>
+                                        {% endfor %}
+                                        {% if pests|length > 2 %}
+                                        <span class="tip-wrap"><span class="more-chip">+{{ pests|length - 2 }}</span>
+                                            <div class="tip-box"><div class="resist-section-title">All Pest Resistances</div>{% for p in pests %}<div style="margin:3px 0;">• <strong>{{ p.name }}</strong> — {{ p.level }}</div>{% endfor %}</div>
+                                        </span>{% endif %}
+                                    {% else %}<span style="color:var(--text-muted);font-size:12px;">None recorded</span>{% endif %}
+                                </td>
+                                {# ── DISEASE RESISTANCES ── #}
+                                <td style="min-width:160px;">
+                                    {% set diseases = item.disease_resistances | fromjson if item.disease_resistances else [] %}
+                                    {% if diseases %}
+                                        {% for d in diseases[:2] %}
+                                            <span class="tip-wrap">
+                                                {% if d.level == 'Highly Resistant' %}<span class="rbadge rbadge-hr">{{ d.name }}</span>
+                                                {% elif d.level == 'Resistant' %}<span class="rbadge rbadge-r">{{ d.name }}</span>
+                                                {% elif d.level == 'Moderately Resistant' %}<span class="rbadge rbadge-mr">{{ d.name }}</span>
+                                                {% else %}<span class="rbadge rbadge-t">{{ d.name }}</span>{% endif %}
+                                                <div class="tip-box"><strong>{{ d.name }}</strong><br>Level: {{ d.level }}</div>
+                                            </span>
+                                        {% endfor %}
+                                        {% if diseases|length > 2 %}
+                                        <span class="tip-wrap"><span class="more-chip">+{{ diseases|length - 2 }}</span>
+                                            <div class="tip-box"><div class="resist-section-title">All Disease Resistances</div>{% for d in diseases %}<div style="margin:3px 0;">• <strong>{{ d.name }}</strong> — {{ d.level }}</div>{% endfor %}</div>
+                                        </span>{% endif %}
+                                    {% else %}<span style="color:var(--text-muted);font-size:12px;">None recorded</span>{% endif %}
+                                </td>
+                                {# ── ABIOTIC STRESS ── #}
+                                <td style="min-width:150px;">
+                                    {% set abiotic = item.abiotic_stress | fromjson if item.abiotic_stress else [] %}
+                                    {% if abiotic %}
+                                        {% for a in abiotic[:2] %}
+                                            <span class="tip-wrap">
+                                                {% if a.level == 'Highly Tolerant' %}<span class="rbadge rbadge-ht">{{ a.name }}</span>
+                                                {% elif a.level == 'Tolerant' %}<span class="rbadge rbadge-t">{{ a.name }}</span>
+                                                {% else %}<span class="rbadge rbadge-mt">{{ a.name }}</span>{% endif %}
+                                                <div class="tip-box"><strong>{{ a.name }}</strong><br>Level: {{ a.level }}</div>
+                                            </span>
+                                        {% endfor %}
+                                        {% if abiotic|length > 2 %}
+                                        <span class="tip-wrap"><span class="more-chip">+{{ abiotic|length - 2 }}</span>
+                                            <div class="tip-box"><div class="resist-section-title">All Abiotic Stresses</div>{% for a in abiotic %}<div style="margin:3px 0;">• <strong>{{ a.name }}</strong> — {{ a.level }}</div>{% endfor %}</div>
+                                        </span>{% endif %}
+                                    {% else %}<span style="color:var(--text-muted);font-size:12px;">None recorded</span>{% endif %}
+                                </td>
+                                {# ── SPECIAL TRAITS ── #}
+                                <td style="max-width:200px;">
+                                    {% if item.special_traits %}
+                                    <span class="tip-wrap">
+                                        <span style="font-size:12px;color:var(--text-muted);cursor:default;">{{ item.special_traits[:35] }}{% if item.special_traits|length > 35 %}…{% endif %}</span>
+                                        {% if item.special_traits|length > 35 %}
+                                        <div class="tip-box">{{ item.special_traits }}</div>{% endif %}
+                                    </span>
+                                    {% else %}-{% endif %}
+                                </td>
                                 </tr>
                             {% else %}
-                            <tr><td colspan="15" style="text-align: center; padding: 30px;">No records found. Upload CSV to populate.</td></tr>
+                            <tr><td colspan="17" style="text-align: center; padding: 30px;">No records found. Upload CSV to populate.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -493,6 +624,7 @@
                                 <th>Date Licensed</th>
                                 <th>License Fee (₹)</th>
                                 <th>Royalty Received (₹)</th>
+                                <th>Royalty Date</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -511,6 +643,7 @@
                                 <td>{{ item.date_licensed }}</td>
                                 <td>₹{{ "{:,.2f}".format(item.license_fee or 0) }}</td>
                                 <td>₹{{ "{:,.2f}".format(item.royalty_received or 0) }}</td>
+                                <td>{{ item.date_royalty_received or '-' }}</td>
                             </tr>
                             {% endfor %}
                             
@@ -530,6 +663,7 @@
                                 <td>{{ item.date_licensed or item.mou_date }}</td>
                                 <td>₹{{ "{:,.2f}".format(item.license_fee or 0) }}</td>
                                 <td>₹{{ "{:,.2f}".format(item.royalty_received or 0) }}</td>
+                                <td>{{ item.date_royalty_received or '-' }}</td>
                             </tr>
                             {% endfor %}
                             {% endfor %}
@@ -550,6 +684,7 @@
                                 <td>{{ item.date_licensed }}</td>
                                 <td>₹{{ "{:,.2f}".format(item.license_fee or 0) }}</td>
                                 <td>₹{{ "{:,.2f}".format(item.royalty_received or 0) }}</td>
+                                <td>{{ item.date_royalty_received or '-' }}</td>
                             </tr>
                             {% endfor %}
                             {% endfor %}
