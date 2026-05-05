@@ -20,21 +20,20 @@ from flask_mail import Mail, Message
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'), override=True)
 
+# --- GEMINI AI (Optional) ---
 api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-print(f"\n--- DEBUG: KEY LENGTH IS {len(api_key)} CHARS ---")
-print(f"--- DEBUG: KEY STARTS WITH: {api_key[:6]} ---\n")
-
-
-if not api_key:
-    print(f"\n🚨 FATAL ERROR: Python cannot find the key inside {basedir}\\.env")
-    print("🚨 Check that your .env file is actually saved and has the key.")
-    exit(1) # Kills the server immediately so you don't waste time testing
-
-client = genai.Client(api_key=api_key)
+client = None
+if api_key and not api_key.startswith("your_"):
+    try:
+        client = genai.Client(api_key=api_key)
+        print(f"\n--- Gemini AI: Enabled (key starts with: {api_key[:6]}) ---\n")
+    except Exception as e:
+        print(f"\n--- Gemini AI: Failed to init ({e}) — AI features disabled ---\n")
+else:
+    print("\n--- Gemini AI: No valid key found — AI features disabled ---\n")
 
 # --- Ensure upload directory exists ---
 os.makedirs('static/uploads', exist_ok=True)
-# ... rest of your code continues ...
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///icar_portfolio.db'
@@ -45,12 +44,9 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-fallback-key-change
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'suhasnethi04@gmail.com')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
 mail = Mail(app)
-
-# Use the environment variable here, NOT the actual key
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -115,8 +111,7 @@ class PatentProduct(db.Model):
     date_licensed = db.Column(db.Date)
     mou_date = db.Column(db.Date)
     mou_copy_filename = db.Column(db.String(200))
-    office_action_date = db.Column(db.Date) 
-    hearing_date = db.Column(db.Date)      
+    date_granted = db.Column(db.Date)
     license_fee = db.Column(db.Float)
     license_fee_date = db.Column(db.Date) 
     royalty_received = db.Column(db.Float)
@@ -134,8 +129,7 @@ class PatentProcess(db.Model):
     date_licensed = db.Column(db.Date)
     mou_date = db.Column(db.Date)
     mou_copy_filename = db.Column(db.String(200))
-    office_action_date = db.Column(db.Date) 
-    hearing_date = db.Column(db.Date)      
+    date_granted = db.Column(db.Date)
     license_fee = db.Column(db.Float)
     license_fee_date = db.Column(db.Date) 
     royalty_received = db.Column(db.Float)
@@ -153,8 +147,7 @@ class PatentDesign(db.Model):
     date_licensed = db.Column(db.Date)
     mou_date = db.Column(db.Date)
     mou_copy_filename = db.Column(db.String(200))
-    office_action_date = db.Column(db.Date) 
-    hearing_date = db.Column(db.Date)      
+    date_granted = db.Column(db.Date)
     license_fee = db.Column(db.Float)
     license_fee_date = db.Column(db.Date) 
     royalty_received = db.Column(db.Float)
@@ -207,7 +200,9 @@ def setup():
     db.create_all()
     msg = ""
     if not User.query.filter_by(username='admin').first():
-        admin = User(username='admin', email='suhasnethi04@gmail.com', password=generate_password_hash('admin123'), role='Admin', is_approved=True)
+        admin_email = os.environ.get('ADMIN_EMAIL') or os.environ.get('MAIL_USERNAME', 'admin@example.com')
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+        admin = User(username='admin', email=admin_email, password=generate_password_hash(admin_password), role='Admin', is_approved=True)
         db.session.add(admin)
         msg += "Admin created. "
     db.session.commit()
@@ -228,7 +223,7 @@ def login():
             _otp_store[user.id] = otp  # Stored server-side, NOT in cookie
             print(f"--- SECURITY LOG: OTP FOR {user.username} IS {otp} ---")
             try:
-                msg = Message("Your ICAR Security PIN", sender="suhasnethi04@gmail.com", recipients=[user.email])
+                msg = Message("Your ICAR Security PIN", sender=os.environ.get('MAIL_USERNAME', 'admin@example.com'), recipients=[user.email])
                 msg.body = f"Your one-time security PIN is: {otp}\nDo not share this code with anyone."
                 mail.send(msg)
                 flash('A 6-digit security PIN has been sent to your email.')
@@ -531,12 +526,11 @@ def add_patent():
             'ip_asset_id': asset_id,
             'status': request.form.get('status', 'Filed').strip(),
             'date_filed': filing_date,
+            'date_granted': p_date(request.form.get('date_granted')),
             'valid_up_to': auto_valid_up_to,
             'company_licensed': request.form.get('company_licensed'),
             'mou_date': p_date(request.form.get('mou_date')),
             'mou_copy_filename': fname,
-            'office_action_date': p_date(request.form.get('office_action_date')),
-            'hearing_date': p_date(request.form.get('hearing_date')),
             'license_fee': request.form.get('license_fee') or 0.0,
             'license_fee_date': p_date(request.form.get('license_fee_date')),
             'royalty_received': request.form.get('royalty_received') or 0.0,
@@ -636,7 +630,7 @@ def export_csv_detailed(repo_type):
 
     if repo_type == 'varieties':
         filename = "Detailed_Varieties_Report.csv"
-        cw.writerow(['ID', 'Cat', 'Status', 'Year', 'Duration', 'PPVFR', 'Agency', 'Yield', 'Zones', 'States', 'Grain Types', 'Pests', 'Diseases', 'Abiotic Stress', 'Special Traits'])
+        cw.writerow(['ID', 'Cat', 'Status', 'Year', 'Duration', 'PPVFR', 'Notified By', 'Yield', 'Zones', 'States', 'Grain Types', 'Pests', 'Diseases', 'Abiotic Stress', 'Special Traits'])
         for v in Variety.query.all():
             cw.writerow([
                 v.ip_asset_id, v.category, v.status, v.year_of_release, v.duration_days, 
@@ -648,13 +642,13 @@ def export_csv_detailed(repo_type):
             
     elif repo_type == 'patents':
         filename = "Detailed_Patents_Report.csv"
-        cw.writerow(['ID', 'Type', 'Title', 'Status', 'Filed', 'Expiry', 'Company', 'License / MoU Date', 'Office Action', 'Hearing', 'Fee', 'Fee Date', 'Royalty', 'Royalty Date'])
+        cw.writerow(['ID', 'Type', 'Title', 'Status', 'Date Filed', 'Date Granted', 'Expiry', 'Company', 'License / MoU Date', 'Fee', 'Fee Date', 'Royalty', 'Royalty Date'])
         models = [(PatentProduct, 'Product Patent'), (PatentProcess, 'Process Patent'), (PatentDesign, 'Design Patent')]
         for m, label in models:
             for p in m.query.all():
                 name = getattr(p, 'patent_name', getattr(p, 'process_name', getattr(p, 'design_name', '')))
                 actual_date = p.date_licensed if p.date_licensed else p.mou_date
-                cw.writerow([p.ip_asset_id, label, name, p.status, p.date_filed, p.valid_up_to, p.company_licensed, actual_date, p.office_action_date, p.hearing_date, p.license_fee, p.license_fee_date, p.royalty_received, p.date_royalty_received])
+                cw.writerow([p.ip_asset_id, label, name, p.status, p.date_filed, p.date_granted, p.valid_up_to, p.company_licensed, actual_date, p.license_fee, p.license_fee_date, p.royalty_received, p.date_royalty_received])
             
     elif repo_type == 'brands':
         filename = "Detailed_Brands_Report.csv"
@@ -705,10 +699,8 @@ def deadlines():
 
                 if hasattr(i, 'valid_up_to') and i.valid_up_to:
                     schedule.append({'title': f"{name} (EXPIRY)", 'start': str(i.valid_up_to), 'color': '#dc3545'})
-                if hasattr(i, 'office_action_date') and i.office_action_date:
-                    schedule.append({'title': f"{name} (ACTION)", 'start': str(i.office_action_date), 'color': '#ffc107'})
-                if hasattr(i, 'hearing_date') and i.hearing_date:
-                    schedule.append({'title': f"{name} (HEARING)", 'start': str(i.hearing_date), 'color': '#1cc88a'})
+                if hasattr(i, 'date_granted') and i.date_granted:
+                    schedule.append({'title': f"{name} (GRANTED)", 'start': str(i.date_granted), 'color': '#1cc88a'})
         
         return render_template('deadlines.html', schedule=schedule)
         
@@ -792,7 +784,7 @@ def approve_user(user_id):
     user = User.query.get(user_id)
     if user:
         # FIX: If you or admin sign up, you get Admin role automatically on approval
-        if user.username.lower() in ['suhas', 'admin']:
+        if user.username.lower() in ['admin']:
             user.role = 'Admin'
         user.is_approved = True
         db.session.commit()
@@ -871,7 +863,7 @@ def import_csv_data(repo_type):
                 v = Variety(
                     ip_asset_id=row['ID'], category=row.get('Cat'), status=row.get('Status', 'Filed'),
                     year_of_release=p_int(row.get('Year')), duration_days=p_int(row.get('Duration')),
-                    ppvfr_registration=row.get('PPVFR'), agency_released_by=row.get('Agency'),
+                    ppvfr_registration=row.get('PPVFR'), agency_released_by=row.get('Notified By'),
                     yield_data=row.get('Yield'), recommended_zones=parse_json(row.get('Zones')),
                     states=parse_json(row.get('States')), grain_types=parse_json(row.get('Grain Types')), 
                     pest_resistances=parse_json(row.get('Pests')), disease_resistances=parse_json(row.get('Diseases')),
@@ -886,9 +878,9 @@ def import_csv_data(repo_type):
                 if model.query.filter_by(ip_asset_id=row['ID']).first(): continue
                 data = {
                     'ip_asset_id': row['ID'], 'status': row.get('Status', 'Filed'),
-                    'date_filed': p_date(row.get('Filed')), 'valid_up_to': p_date(row.get('Expiry')),
+                    'date_filed': p_date(row.get('Date Filed')), 'date_granted': p_date(row.get('Date Granted')),
+                    'valid_up_to': p_date(row.get('Expiry')),
                     'company_licensed': row.get('Company'), 'date_licensed': p_date(row.get('License / MoU Date')),
-                    'office_action_date': p_date(row.get('Office Action')), 'hearing_date': p_date(row.get('Hearing')),
                     'license_fee': p_float(row.get('Fee')), 'license_fee_date': p_date(row.get('Fee Date')),
                     'royalty_received': p_float(row.get('Royalty')), 'date_royalty_received': p_date(row.get('Royalty Date'))
                 }

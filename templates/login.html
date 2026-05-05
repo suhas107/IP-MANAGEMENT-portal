@@ -1,10 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
+
 <head>
     <title>ICAR-IIRR | Secure Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         :root {
             --primary: #10b981;
@@ -16,6 +18,7 @@
             --input-bg: white;
             --border: rgba(16, 185, 129, 0.3);
         }
+
         body.dark-mode {
             --bg: #020617;
             --surface: rgba(15, 23, 42, 0.85);
@@ -25,98 +28,244 @@
             --border: rgba(255, 255, 255, 0.1);
         }
 
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
-        body { font-family: 'Poppins', sans-serif; background-color: var(--bg); display: flex; align-items: center; justify-content: center; transition: background-color 0.4s ease; }
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.4s ease;
+        }
 
         /* Background Mesh */
         .bg-mesh {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
             background-image: radial-gradient(at 0% 0%, hsla(160, 100%, 76%, 0.15) 0px, transparent 50%),
-                              radial-gradient(at 100% 0%, hsla(43, 100%, 74%, 0.15) 0px, transparent 50%);
+                radial-gradient(at 100% 0%, hsla(43, 100%, 74%, 0.15) 0px, transparent 50%);
         }
 
         .login-container {
-            display: flex; width: 900px; height: 550px; background: var(--surface);
-            backdrop-filter: blur(20px); border-radius: 30px; overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.8);
-            animation: fadeIn 0.8s ease-out; transition: background 0.4s ease;
+            display: flex;
+            width: 900px;
+            height: 550px;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            animation: fadeIn 0.8s ease-out;
+            transition: background 0.4s ease;
         }
-        .dark-mode .login-container { border-color: rgba(255,255,255,0.08); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .dark-mode .login-container {
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         /* Left side Branding */
         .login-brand {
-            flex: 1; background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: white; padding: 40px; text-align: center; position: relative;
-        }
-        
-        .login-brand::after {
-            content: '\f4d8'; font-family: "Font Awesome 6 Free"; font-weight: 900;
-            position: absolute; bottom: -30px; left: -20px; font-size: 200px; color: rgba(255,255,255,0.03);
+            flex: 1;
+            background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
         }
 
-        .login-brand i.main-logo { font-size: 60px; margin-bottom: 20px; color: var(--primary); }
-        .login-brand h1 { font-size: 28px; margin: 0; letter-spacing: 1px; }
-        .login-brand p { font-size: 14px; opacity: 0.7; margin-top: 10px; line-height: 1.6; }
+        .login-brand::after {
+            content: '\f4d8';
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            bottom: -30px;
+            left: -20px;
+            font-size: 200px;
+            color: rgba(255, 255, 255, 0.03);
+        }
+
+        .login-brand i.main-logo {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .login-brand h1 {
+            font-size: 28px;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        .login-brand p {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
 
         /* Right side Form */
-        .login-form-area { flex: 1.2; padding: 50px; display: flex; flex-direction: column; justify-content: center; }
-        .login-form-area h2 { font-size: 24px; color: var(--text-main); margin-bottom: 10px; font-weight: 700; transition: color 0.4s; }
-        .login-form-area p { color: var(--text-muted); font-size: 14px; margin-bottom: 30px; transition: color 0.4s; }
+        .login-form-area {
+            flex: 1.2;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
 
-        .form-group { position: relative; margin-bottom: 25px; }
-        .form-group i { position: absolute; left: 15px; top: 15px; color: var(--primary); font-size: 18px; }
+        .login-form-area h2 {
+            font-size: 24px;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            font-weight: 700;
+            transition: color 0.4s;
+        }
+
+        .login-form-area p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 30px;
+            transition: color 0.4s;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            color: var(--primary);
+            font-size: 18px;
+        }
 
         input {
-            width: 100%; padding: 14px 15px 14px 45px; border-radius: 12px; border: 1px solid var(--border);
-            background: var(--input-bg); color: var(--text-main); font-family: 'Poppins'; font-size: 14px; transition: 0.3s; box-sizing: border-box;
+            width: 100%;
+            padding: 14px 15px 14px 45px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-family: 'Poppins';
+            font-size: 14px;
+            transition: 0.3s;
+            box-sizing: border-box;
         }
-        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
 
         .login-btn {
-            background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px;
-            font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
             box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
         }
-        .login-btn:hover { background: #059669; transform: translateY(-2px); }
+
+        .login-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
 
         /* CLEANED UP FOOTER CSS */
-        .form-footer { 
-            margin-top: 25px; 
-            text-align: center; 
-            font-size: 14px; 
-            color: #64748b; 
+        .form-footer {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
         }
-        .form-footer a { 
-            color: var(--primary); 
-            text-decoration: none; 
-            font-weight: 600; 
+
+        .form-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
             margin-left: 5px;
             transition: 0.3s;
         }
-        .form-footer a:hover { 
+
+        .form-footer a:hover {
             text-decoration: underline;
             color: #059669;
         }
 
-        .alert-box { background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; border-left: 4px solid #ef4444; }
+        .alert-box {
+            background: #fef2f2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            border-left: 4px solid #ef4444;
+        }
 
         /* Dark mode toggle button (top-right corner) */
         .theme-fab {
-            position: fixed; top: 20px; right: 20px;
-            width: 42px; height: 42px; border-radius: 50%;
-            background: var(--surface); border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 16px; color: var(--text-main);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease; z-index: 999;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-main);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            z-index: 999;
             backdrop-filter: blur(10px);
         }
-        .theme-fab:hover { transform: scale(1.1); }
+
+        .theme-fab:hover {
+            transform: scale(1.1);
+        }
     </style>
 </head>
+
 <body>
     <button class="theme-fab" id="theme-fab" title="Toggle dark mode" onclick="toggleTheme()">
         <i class="fa-solid fa-moon" id="theme-icon"></i>
@@ -125,8 +274,8 @@
 
     <div class="login-container">
         <div class="login-brand">
-            <i class="fa-solid fa-wheat-awn main-logo"></i>
-            <h1>ICAR-IIRR</h1>
+            <img src="/static/icarlogo.gif" alt="ICAR Logo" style="height: 80px; width: auto; object-fit: contain;">
+            <h1>IP-ASSETS</h1>
             <p>Indian Institute of Rice Research<br>Intellectual Property Management System</p>
         </div>
 
@@ -135,11 +284,11 @@
             <p>Please enter your credentials to manage the portfolio.</p>
 
             {% with messages = get_flashed_messages() %}
-              {% if messages %}
-                {% for message in messages %}
-                  <div class="alert-box"><i class="fa-solid fa-circle-exclamation"></i> {{ message }}</div>
-                {% endfor %}
-              {% endif %}
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert-box"><i class="fa-solid fa-circle-exclamation"></i> {{ message }}</div>
+            {% endfor %}
+            {% endif %}
             {% endwith %}
 
             <form method="POST">
@@ -155,7 +304,7 @@
             </form>
 
             <div class="form-footer">
-                <span>New user?</span> 
+                <span>New user?</span>
                 <a href="/signup">Request system access / Sign Up</a>
             </div>
         </div>
@@ -175,4 +324,5 @@
         }
     </script>
 </body>
+
 </html>

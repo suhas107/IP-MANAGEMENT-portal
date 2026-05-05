@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <title>ICAR-IIRR | {{ repo_type.capitalize() }} Data</title>
@@ -267,7 +267,7 @@
 
     <div class="sidebar">
         <div class="sidebar-brand">
-            <i class="fa-solid fa-wheat-awn" style="color: #10b981; font-size: 28px;"></i> ICAR-IIRR
+            <img src="/static/icarlogo.gif" alt="ICAR Logo" style="height: 44px; width: auto; object-fit: contain;"> ICAR-IIRR
         </div>
         
         <div class="section-title">Menu</div>
@@ -307,7 +307,7 @@
                 <div class="user-profile" style="border-left: 1px solid var(--border); padding-left: 20px; display: flex; align-items: center; gap: 12px;">
                     <div style="text-align: right; line-height: 1.2;">
                         <span style="display: block; font-size: 14px; font-weight: 600;">{{ current_user.username }}</span>
-                        <span style="font-size: 10px; color: #fff; background: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">{{ current_user.role }}</span>
+                        <span style="font-size: 10px; color: #fff; background: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight: 700;">{{ current_user.role }}</span>
                     </div>
                     <img src="https://ui-avatars.com/api/?name={{ current_user.username }}&background=10b981&color=fff&rounded=true&bold=true" width="40" style="border-radius: 50%;">
                 </div>
@@ -366,7 +366,7 @@
                                 <th>Release Year</th>
                                 <th>Duration</th>
                                 <th>PPV&FR</th>
-                                <th>Agency</th>
+                                <th>Notified By</th>
                                 <th>Yield Data</th>
                                 <th>Zones</th>
                                 <th>States</th>
@@ -514,9 +514,8 @@
                                 <th>Title / Name</th>
                                 <th>Status</th>
                                 <th>Filed Date</th>
+                                <th>Date Granted</th>
                                 <th>Expiry Date</th>
-                                <th>Office Action</th>
-                                <th>Hearing</th>
                                 <th>Licensee</th>
                                 <th>License Date</th>
                                 <th>License Fee (₹)</th>
@@ -541,9 +540,8 @@
                                 <td>{{ item.patent_name or item.process_name or item.design_name }}</td>
                                 <td>{{ render_status_badge(item.status) }}</td>
                                 <td>{{ item.date_filed or '-' }}</td>
+                                <td>{{ item.date_granted or '-' }}</td>
                                 <td>{{ item.valid_up_to or '-' }}</td>
-                                <td>{{ item.office_action_date or '-' }}</td>
-                                <td>{{ item.hearing_date or '-' }}</td>
                                 <td>{{ item.company_licensed or '-' }}</td>
                                 <td>{{ item.date_licensed or item.mou_date or '-' }}</td>
                                 <td>₹{{ "{:,.2f}".format(item.license_fee or 0) }}</td>

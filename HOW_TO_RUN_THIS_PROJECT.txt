@@ -1,0 +1,417 @@
+================================================================================
+   ICAR IP MANAGEMENT PORTAL — COMPLETE SETUP GUIDE FROM SCRATCH
+   (No AI needed. Follow this file step by step.)
+================================================================================
+
+Written by: Suhas | Last Updated: April 2026
+This guide covers EVERYTHING needed to go from a blank computer to a fully
+running website, including the setup page, login, and admin panel.
+
+================================================================================
+SECTION 0: WHAT YOU NEED INSTALLED FIRST (Pre-Requisites)
+================================================================================
+
+Before anything else, make sure these two programs are installed on the PC:
+
+  1. PYTHON (version 3.10 or higher)
+     Download from: https://www.python.org/downloads/
+     *** IMPORTANT: During install, CHECK THE BOX "Add Python to PATH" ***
+     After install, verify it worked by opening Command Prompt and typing:
+         python --version
+     It should print something like: Python 3.11.x
+
+  2. GIT (optional, only needed if you cloned from GitHub)
+     Download from: https://git-scm.com/downloads
+
+================================================================================
+SECTION 1: GET THE PROJECT FILES
+================================================================================
+
+METHOD A — If you received the project as a ZIP file:
+  - Extract the ZIP to any folder, e.g.: C:\Users\YourName\Desktop\IP-MANAGEMENT-portal
+  - Remember that folder path, you'll need it.
+
+METHOD B — If cloning from GitHub:
+  Open Command Prompt (search "cmd" in Start Menu) and run:
+      git clone https://github.com/suhas107/IP-MANAGEMENT-portal.git
+      cd IP-MANAGEMENT-portal
+
+================================================================================
+SECTION 2: OPEN COMMAND PROMPT IN THE PROJECT FOLDER
+================================================================================
+
+This step is CRITICAL. All commands below must be run FROM INSIDE the project folder.
+
+Option 1 (Easiest):
+  - Open File Explorer and navigate to the project folder
+    (the folder that contains app.py, requirements.txt, .env etc.)
+  - Click on the address bar at the top of File Explorer
+  - Type: cmd
+  - Press Enter — a Command Prompt opens IN that folder automatically
+
+Option 2 (Manual):
+  - Open Command Prompt (Win + R, type cmd, Enter)
+  - Navigate to the folder:
+      cd C:\Users\YourName\Desktop\IP-MANAGEMENT-portal
+  (Replace the path with wherever you put the project folder)
+
+  VERIFY you're in the right place by running:
+      dir
+  You should see files like: app.py, requirements.txt, .env, templates folder etc.
+
+================================================================================
+SECTION 3: CREATE A VIRTUAL ENVIRONMENT
+================================================================================
+
+A virtual environment keeps this project's Python packages separate from everything
+else on the computer. You only do this ONCE when setting up for the first time.
+
+Run this command (make sure you're inside the project folder):
+
+    python -m venv venv
+
+This creates a folder called "venv" inside the project. That's normal.
+
+================================================================================
+SECTION 4: ACTIVATE THE VIRTUAL ENVIRONMENT
+================================================================================
+
+*** YOU MUST DO THIS EVERY TIME you open a new Command Prompt to run the app ***
+
+On Windows Command Prompt:
+    venv\Scripts\activate
+
+On Windows PowerShell (if you're using that instead):
+    venv\Scripts\Activate.ps1
+    (If you get an error about "execution policy", run this first:)
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+After activation, you'll see (venv) at the start of your command line, like:
+    (venv) C:\Users\YourName\Desktop\IP-MANAGEMENT-portal>
+That means it's working correctly.
+
+================================================================================
+SECTION 5: INSTALL ALL DEPENDENCIES
+================================================================================
+
+Do this ONCE after setting up the virtual environment (or if you get import errors):
+
+    pip install flask flask-login flask-sqlalchemy flask-mail werkzeug python-docx google-genai python-dotenv
+
+OR using the requirements file (this installs exact versions):
+    pip install -r requirements.txt
+
+NOTE: The requirements.txt in this project does NOT include google-genai and
+python-dotenv. If you see import errors for those, run:
+    pip install google-genai python-dotenv
+
+================================================================================
+SECTION 6: SET UP THE .env FILE (VERY IMPORTANT)
+================================================================================
+
+The .env file stores secret credentials. It MUST exist in the project root folder
+(same folder as app.py). If it's missing, the app will crash immediately.
+
+Create a file called exactly:   .env   (dot before env, no .txt extension)
+
+HOW TO CREATE IT:
+  - In the project folder, right-click → New → Text Document
+  - Name it exactly:  .env
+  - If Windows says "Are you sure?" click Yes
+  - Open it with Notepad
+
+CONTENTS OF .env — copy-paste this and fill in your values:
+
+-------- COPY FROM HERE --------
+MAIL_USERNAME="your_gmail_address@gmail.com"
+MAIL_PASSWORD="your_16_digit_google_app_password"
+SECRET_KEY="any-random-long-string-you-make-up"
+GEMINI_API_KEY="your_google_gemini_api_key"
+-------- COPY TO HERE --------
+
+EXPLANATION OF EACH VARIABLE:
+
+  MAIL_USERNAME
+    - Your Gmail address (the one the app sends OTP emails FROM)
+    - Example: MAIL_USERNAME="icar.iirr.portal@gmail.com"
+
+  MAIL_PASSWORD
+    - NOT your normal Gmail password. This is a special "App Password"
+    - How to get one:
+        1. Go to: https://myaccount.google.com/
+        2. Click "Security" on the left sidebar
+        3. Under "How you sign in to Google", click "2-Step Verification"
+        4. Scroll to the bottom, find "App passwords"
+        5. Click it, select app = "Mail", device = "Windows Computer"
+        6. Click Generate — you get a 16-character code like: hxbu fpwv luav wubz
+        7. Put that code (with or without spaces) as the value
+    - Example: MAIL_PASSWORD="hxbu fpwv luav wubz"
+    - NOTE: If you don't set this up, OTP emails won't send, but you can still
+      see the OTP in the terminal/Command Prompt window (look for the line that says
+      "--- SECURITY LOG: OTP FOR admin IS 123456 ---")
+
+  SECRET_KEY
+    - Make up any random secret string. Used to secure sessions/cookies.
+    - Example: SECRET_KEY="icar-production-secret-key-2026"
+    - DO NOT share this publicly.
+
+  GEMINI_API_KEY
+    - The Google Gemini AI API key (for AI analysis features)
+    - How to get one:
+        1. Go to: https://aistudio.google.com/app/apikey
+        2. Sign in with your Google account
+        3. Click "Create API Key"
+        4. Copy the key
+    - Example: GEMINI_API_KEY="AIzaSyD_your_actual_key_here"
+    - NOTE: If you don't have a Gemini key, the app will CRASH on startup.
+      You need at least a placeholder-style key, or ask someone for the key.
+      The free tier on Google AI Studio is enough for this app.
+
+FULL EXAMPLE of a working .env file:
+    MAIL_USERNAME="icar.portal@gmail.com"
+    MAIL_PASSWORD="abcd efgh ijkl mnop"
+    SECRET_KEY="icar-super-secret-key-2026"
+    GEMINI_API_KEY="AIzaSyD_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+================================================================================
+SECTION 7: RUN THE APP FOR THE VERY FIRST TIME (Database Setup)
+================================================================================
+
+The app uses a database file (icar_portfolio.db) that is AUTOMATICALLY created
+when you first set up. Follow these steps IN ORDER:
+
+STEP 7A — Start the Flask server:
+  Make sure your virtual environment is activated (you see "(venv)" in the prompt)
+  Then run:
+      python app.py
+
+  You should see output like:
+      --- DEBUG: KEY LENGTH IS 39 CHARS ---
+      --- DEBUG: KEY STARTS WITH: AIzaSy ---
+       * Running on http://127.0.0.1:5000
+       * Debug mode: on
+
+  If you see an error about GEMINI_API_KEY, check your .env file again (Section 6).
+  If you see an error about a module not found, go back to Section 5 and install it.
+
+STEP 7B — Run the SETUP PAGE (creates database + admin account):
+  Open your web browser and go to:
+      http://127.0.0.1:5000/setup
+
+  You should see a message like:
+      "Admin created. Database ready! Go to /login"
+
+  This page:
+  - Creates all the database tables automatically
+  - Creates the default admin account (username: admin, password: admin123)
+  - You ONLY need to visit this page ONCE — the very first time
+
+  *** IMPORTANT: Do NOT visit /setup again after data is in the system ***
+  *** It won't delete existing data, but it's good practice to avoid it ***
+
+================================================================================
+SECTION 8: LOG IN FOR THE FIRST TIME
+================================================================================
+
+After running /setup, go to:
+    http://127.0.0.1:5000/login
+
+Default admin credentials:
+    Username: admin
+    Password: admin123
+
+After entering username and password correctly, the system will send a 6-digit OTP
+to the admin's email (which is set in app.py line 210 as suhasnethi04@gmail.com).
+
+If emails aren't working:
+  - Look at the Command Prompt window where you ran "python app.py"
+  - Find the line: --- SECURITY LOG: OTP FOR admin IS 123456 ---
+  - Type that number on the OTP page to log in
+
+AFTER FIRST LOGIN, CHANGE THE ADMIN PASSWORD:
+  The default password "admin123" is NOT secure. Change it from the manage users
+  page or directly in the database once you're in.
+
+================================================================================
+SECTION 9: EVERY TIME AFTER THAT (Normal Day-to-Day Usage)
+================================================================================
+
+Every time you want to use the portal:
+
+1. Open Command Prompt in the project folder (see Section 2)
+2. Activate the virtual environment:
+       venv\Scripts\activate
+3. Start the server:
+       python app.py
+4. Open browser and go to:
+       http://127.0.0.1:5000/login
+5. Log in with your credentials
+
+That's it! Steps 3-5 every single day.
+
+To STOP the server: Press Ctrl + C in the Command Prompt window.
+
+================================================================================
+SECTION 10: WHAT IF SOMETHING GOES WRONG?
+================================================================================
+
+PROBLEM: "ModuleNotFoundError: No module named 'flask'"
+  SOLUTION: Your virtual environment isn't activated, or packages weren't installed.
+  Run: venv\Scripts\activate
+  Then: pip install flask flask-login flask-sqlalchemy flask-mail werkzeug python-docx google-genai python-dotenv
+
+PROBLEM: "FATAL ERROR: Python cannot find the key inside .env"
+  SOLUTION: Your .env file is missing or has wrong content.
+  - Make sure .env is in the SAME folder as app.py
+  - Make sure GEMINI_API_KEY is set with a real key (not empty)
+  - Open .env in Notepad and verify the format matches Section 6
+
+PROBLEM: "Address already in use" or "Port 5000 is in use"
+  SOLUTION: Another instance of the app is already running.
+  - Find the other Command Prompt window and press Ctrl+C there
+  - OR restart your computer
+
+PROBLEM: App crashes when visiting /login but not /setup
+  SOLUTION: You forgot to visit the /setup page first!
+  Go to: http://127.0.0.1:5000/setup
+
+PROBLEM: OTP email not received
+  SOLUTION: Check the Command Prompt terminal for the OTP printed there.
+  Also check your Spam/Junk folder. Make sure MAIL_USERNAME and MAIL_PASSWORD
+  in .env are correct (use a Google App Password, not your regular password).
+
+PROBLEM: "OperationalError: no such table: user"
+  SOLUTION: Database tables don't exist yet.
+  Visit: http://127.0.0.1:5000/setup
+
+PROBLEM: Login says "pending admin approval" even for admin
+  SOLUTION: The admin user wasn't created properly.
+  - Delete the instance/icar_portfolio.db file
+  - Restart the server (python app.py)
+  - Visit /setup again to recreate everything fresh
+
+PROBLEM: "sqlite3.OperationalError: database is locked"
+  SOLUTION: Close any other apps that might be accessing the database file.
+  Stop the server (Ctrl+C), close everything, and restart.
+
+================================================================================
+SECTION 11: PROJECT FOLDER STRUCTURE (What Each File Does)
+================================================================================
+
+IP-MANAGEMENT-portal/
+│
+├── app.py                  ← MAIN APPLICATION FILE — runs the whole website
+├── requirements.txt        ← List of Python packages needed
+├── .env                    ← YOUR SECRET CREDENTIALS (never share this file!)
+├── .gitignore              ← Tells Git to ignore .env and database files
+├── HOW_TO_RUN_THIS_PROJECT.txt  ← This file!
+│
+├── generate_mock_data.py   ← Optional: generates fake test data for demos
+├── insert_mock_data.py     ← Optional: inserts mock data into the database
+├── run_audit.py            ← Optional: audits data consistency
+│
+├── instance/
+│   └── icar_portfolio.db   ← THE DATABASE (auto-created, don't touch)
+│
+├── static/
+│   ├── uploads/            ← Uploaded MOU/document files stored here
+│   └── (CSS, JS, images)   ← Static website assets
+│
+└── templates/
+    ├── login.html          ← Login page
+    ├── dashboard.html      ← Main dashboard after login
+    ├── repository.html     ← IP asset repository overview
+    ├── repository_details.html  ← Detailed view of IP assets
+    ├── add_variety.html    ← Add a new plant variety
+    ├── add_patent.html     ← Add a new patent
+    ├── add_ip.html         ← Add copyright/trademark
+    ├── record_license.html ← Record a licensing deal
+    ├── deadlines.html      ← Calendar view of deadlines
+    ├── manage_users.html   ← Admin user management
+    ├── signup.html         ← New user registration
+    └── verify_otp.html     ← OTP verification page
+
+================================================================================
+SECTION 12: KEY ROUTES / PAGES OF THE WEBSITE
+================================================================================
+
+After the server is running (python app.py), these are all the pages:
+
+  http://127.0.0.1:5000/setup         ← RUN THIS FIRST (one time only)
+  http://127.0.0.1:5000/login         ← Login page (default entry point)
+  http://127.0.0.1:5000/signup        ← Register a new user account
+  http://127.0.0.1:5000/dashboard     ← Main dashboard (login required)
+  http://127.0.0.1:5000/repository    ← IP asset browser (login required)
+  http://127.0.0.1:5000/deadlines     ← Deadline calendar (login required)
+  http://127.0.0.1:5000/add_variety   ← Add plant variety (Admin only)
+  http://127.0.0.1:5000/add_patent    ← Add patent (Admin only)
+  http://127.0.0.1:5000/add_ip        ← Add copyright/trademark (Admin only)
+  http://127.0.0.1:5000/record_license ← Record licensing deal (Admin only)
+  http://127.0.0.1:5000/manage_users  ← Manage user accounts (Admin only)
+  http://127.0.0.1:5000/logout        ← Log out
+
+================================================================================
+SECTION 13: USER ROLES EXPLAINED
+================================================================================
+
+  ADMIN:
+    - Full access to everything
+    - Can add, edit, delete IP assets
+    - Can approve/reject user accounts
+    - Default username: admin | Default password: admin123
+
+  SCIENTIST:
+    - Read-only access (can view all IP data, export CSV, view deadlines)
+    - Cannot add, edit, or delete anything
+    - Must be approved by Admin before logging in
+
+HOW TO ADD NEW USERS:
+  1. New user goes to /signup and creates an account
+  2. Admin logs in and goes to /manage_users
+  3. Admin clicks "Approve" to grant access
+  4. User can now log in
+
+================================================================================
+SECTION 14: LOADING MOCK/DEMO DATA (Optional)
+================================================================================
+
+If you want to populate the system with sample data for testing:
+
+  python generate_mock_data.py
+
+Or to insert the mock data directly into the database:
+  python insert_mock_data.py
+
+These are optional scripts. Only use them for demo/testing purposes.
+Don't run these on the production system with real data already in it.
+
+================================================================================
+SECTION 15: QUICK REFERENCE COMMAND CHEAT SHEET
+================================================================================
+
+FIRST TIME SETUP (run once):
+    python -m venv venv
+    venv\Scripts\activate
+    pip install flask flask-login flask-sqlalchemy flask-mail werkzeug python-docx google-genai python-dotenv
+    python app.py
+    [Browser] → http://127.0.0.1:5000/setup
+    [Browser] → http://127.0.0.1:5000/login
+
+EVERY DAY AFTER THAT:
+    venv\Scripts\activate
+    python app.py
+    [Browser] → http://127.0.0.1:5000/login
+
+STOP THE SERVER:
+    Ctrl + C (in the Command Prompt window)
+
+CHECK IF PACKAGES ARE INSTALLED:
+    pip list
+
+REINSTALL ALL PACKAGES:
+    pip install -r requirements.txt
+    pip install google-genai python-dotenv
+
+================================================================================
+END OF SETUP GUIDE
+================================================================================
