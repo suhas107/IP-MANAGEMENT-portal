@@ -1,5 +1,6 @@
 # Secrets
 .env
+HOW_TO_RUN_THIS_PROJECT.txt
 
 # Temp scripts
 verify_ai.py
