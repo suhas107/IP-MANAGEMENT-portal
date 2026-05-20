@@ -1,6 +1,7 @@
 import os
 import csv
 import io
+import re
 import random
 import json
 from datetime import datetime, date, timedelta
@@ -97,7 +98,7 @@ class VarietyLicense(db.Model):
     license_fee = db.Column(db.Float)
     royalty_received = db.Column(db.Float)
     date_royalty_received = db.Column(db.Date)
-    mou_copy_filename = db.Column(db.String(200)) # <-- ADD THIS LINE
+    mou_copy_filename = db.Column(db.String(200))
     
 class PatentProduct(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -246,7 +247,7 @@ def two_factor():
         user_pin = request.form.get('otp', '').strip()
         expected = str(_otp_store.get(session.get('pending_user_id', -1), '')).strip()
 
-        print(f">>> DEBUG: Typed [{user_pin}], Expected [{expected}]")
+
 
         if user_pin and user_pin == expected:
             user_id = session['pending_user_id']
@@ -256,7 +257,7 @@ def two_factor():
             session.pop('pending_user_id', None)
             return redirect(url_for('dashboard'))
         else:
-            flash(f"Invalid PIN. (Typed: {user_pin})")
+            flash("Invalid PIN. Please try again.")
 
     return render_template('verify_otp.html')
 
@@ -385,9 +386,7 @@ def add_variety():
         fname = secure_filename(file.filename) if file and file.filename != '' else None
         if fname:
             fname = f"VAR_{asset_id}_{fname}"
-            import os
-            # Saves to your existing static/uploads folder
-            file.save(os.path.join('static/uploads', fname)) 
+            file.save(os.path.join('static/uploads', fname))
         # -----------------------------
 
         zones = request.form.getlist('zones[]')
@@ -428,7 +427,7 @@ def add_variety():
             disease_resistances=json.dumps(diseases),
             abiotic_stress=json.dumps(abiotic),
             special_traits=request.form.get('special_traits'),
-            mou_copy_filename=fname  # <-- ADDED THIS LINE
+            mou_copy_filename=fname
         )
         db.session.add(v)
         db.session.commit()
@@ -474,7 +473,7 @@ def record_license():
                 ip_asset_id=asset_id, category=category, company_licensed=company,
                 date_licensed=date_lic, license_fee=l_fee, royalty_received=r_rec,
                 date_royalty_received=date_roy_rec,
-                mou_copy_filename=fname # <-- ADD THIS HERE
+                mou_copy_filename=fname
             )
             db.session.add(vl)
             v = Variety.query.filter_by(ip_asset_id=asset_id).first()
@@ -790,7 +789,7 @@ def approve_user(user_id):
         db.session.commit()
         
         try:
-            msg = Message("ICAR-IIRR Account Approved", sender="suhasnethi04@gmail.com", recipients=[user.email])
+            msg = Message("ICAR-IIRR Account Approved", sender=os.environ.get('MAIL_USERNAME', 'admin@example.com'), recipients=[user.email])
             msg.body = f"Hello {user.username},\n\nYour account has been approved by the Admin.\n\nLink: http://127.0.0.1:5000/login"
             mail.send(msg)
             flash(f'User {user.username} approved!')
@@ -927,7 +926,7 @@ def import_csv_data(repo_type):
 @app.route('/api/chat', methods=['POST'])
 @login_required
 def ai_chat():
-    import re # <--- THIS IS REQUIRED FOR THE FIX
+
     user_msg = request.json.get('message', '').lower().strip()
     if not user_msg:
         return jsonify({'error': 'No message provided'}), 400
