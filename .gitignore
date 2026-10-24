@@ -9,6 +9,7 @@ run_audit.py
 
 # Virtual Environment
 venv/
+.venv/
 env/
 
 # Python Cache

@@ -15,6 +15,16 @@
 
 ---
 
+## 📸 Screenshots
+
+![Command center dashboard with revenue and portfolio chart](docs/screenshots/dashboard.png)
+
+| Varieties repository | Docketing calendar |
+| --- | --- |
+| ![Varieties database with CSV export/import](docs/screenshots/varieties.png) | ![Deadline calendar](docs/screenshots/deadlines.png) |
+
+<p align="center"><img src="docs/screenshots/login.png" alt="Login page" width="640" /></p>
+
 ## ✨ Features
 
 | Area | What it does |
